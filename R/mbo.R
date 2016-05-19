@@ -40,12 +40,6 @@
 mbo = function(fun, design = NULL, learner = NULL, control,
   show.info = getOption("mlrMBO.show.info", TRUE), more.args = list()) {
 
-  #re-route randomSearch
-  if(control$infill.crit == "random") {
-    res = randomSearch(fun = fun, design = design, control = control, show.info = show.info, more.args = more.args)
-    return(res)
-  }
-
   assertClass(fun, "smoof_function")
   par.set = smoof::getParamSet(fun)
   n.params = sum(getParamLengths(par.set))
@@ -56,8 +50,11 @@ mbo = function(fun, design = NULL, learner = NULL, control,
     design = generateDesign(n.params * 4L, par.set)
   else
     assertDataFrame(design, min.rows = 1L, min.cols = 1L)
-  learner = checkLearner(learner, par.set, control, fun)
-  control = checkStuff(fun, par.set, design, learner, control)
+  if (control$infill.crit != "random") {
+    learner = checkLearner(learner, par.set, control, fun)
+    control = checkStuff(fun, par.set, design, learner, control)
+  }
+  
 
   loadPackages(control)
 
@@ -71,7 +68,7 @@ mbo = function(fun, design = NULL, learner = NULL, control,
     more.args = more.args)
 
   # we call the magic mboTemplate where everything happens
-  if (control$schedule.method == "asyn") {
+  if (control$schedule.method == "asyn" || control$infill.crit == "random") {
     final.opt.state = mboAsynTemplate(opt.problem)
   } else {
     final.opt.state = mboTemplate(opt.problem)  

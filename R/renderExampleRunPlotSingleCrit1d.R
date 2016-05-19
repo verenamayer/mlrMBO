@@ -99,6 +99,10 @@ renderExampleRunPlot1d = function(x, iter,
         ctrl2s = createRandomCBControls(control, "cb", user.lambda = TRUE)$controls
         for (i in seq_along(lambdas)) {
           ctrl2s[[i]]$infill.crit.cb.lambda = lambdas[i]
+          evals[[sprintf("%s: %i", name.crit, i)]] = critfun(evals.x, list(model), ctrl2s[[i]], par.set, convertOptPathToDf(opt.path, control)[idx.past, ])  
+        }
+      } else if (control$multipoint.method == "cl") {
+        for (i in seq_len(propose.points)) {
           evals[[sprintf("%s: %.2f", name.crit, lambdas[i])]] = critfun(evals.x, list(model), ctrl2s[[i]], par.set, convertOptPathToDf(opt.path, control)[idx.past, ])  
         }
       } else if (objective == "mean.dist") {

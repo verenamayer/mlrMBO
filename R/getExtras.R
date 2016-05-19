@@ -103,6 +103,8 @@ getExtras = function(n, prop, train.time, control) {
     } else if (control$schedule.method == "asyn") {
       ex$eval.state = "done" #done/proposed
       ex$scheduled.on = NA_integer_
+    } else if (control$infill.crit == "random") {
+      ex$scheduled.on = NA_integer_
     }
     # if we use asyn MBO store node information and evaluation starte
     ex$train.time = if (i == 1) train.time else NA_real_

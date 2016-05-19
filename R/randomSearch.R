@@ -1,44 +1,8 @@
 # random Search
 
-randomSearch = function(fun, design = NULL, control, show.info = getOption("mlrMBO.show.info", TRUE), more.args = list()) {
-  assertClass(fun, "smoof_function")
-  par.set = smoof::getParamSet(fun)
-  control$noisy = isNoisy(fun)
-  control$minimize = shouldBeMinimized(fun)
-
-  opt.problem = makeOptProblem(
-    fun = fun,
-    design = design,
-    learner = NULL,
-    control = control,
-    show.info = show.info,
-    more.args = more.args)
-
-  opt.state = makeOptState(opt.problem)
-
-  evalMBODesign.OptState(opt.state)
-  setOptStateLoop(opt.state)
-  
-  #roughly estimate time per evaluatio from initial design to account for time budget
-  opt.path = getOptStateOptPath(opt.state)
-  mean.time.used = mean(getOptPathExecTimes(opt.path))
-  minOmax = if (is.finite(control$time.budget) && is.finite(control$time.budget)) max else min
-  time.budget = minOmax(control$time.budget, control$exec.time.budget)
-  
-  n = min(control$iters, floor(time.budget / mean.time.used), na.rm = TRUE)
-  prop.points = generateRandomDesign(par.set = par.set, n = n)
-  if (control$filter.proposed.points) {
-      prop.points = filterProposedPoints(prop, opt.state)
-    }
-  prop = list(
-    prop.points = prop.points,
-    crit.vals = matrix(rep.int(NA_real_, n), nrow = n, ncol = 1L),
-    propose.time = rep.int(NA_real_, n),
-    prop.type = rep("random_search", n),
-    errors.model = rep.int(NA_character_, n)
-  )
-  setOptStateModels(opt.state, models = list(train.time = 0L))
-  evalProposedPoints.OptState(opt.state, prop)
-  setOptStateLoop(opt.state)
-  mboFinalize2(opt.state)
+randomSearch = function(fun, control, show.info = getOption("mlrMBO.show.info", TRUE), more.args = list()) {
+  design = generateRandomDesign(n = 1, par.set = smoof::getParamSet(fun))
+  control$infill.crit = "random"
+  control$multipoint.cl.lie = min
+  mbo(fun = fun, design = design, learner = NULL, control = control, show.info = show.info, more.args = more.args)
 }

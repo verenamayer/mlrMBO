@@ -7,12 +7,12 @@ proposePointsRandom = function(opt.state) {
   proposePointsRandom2(par.set, n)
 }
 
-proposePointsRandom2 = function(par.set, n) {
+proposePointsRandom2 = function(par.set, n, prop.type = "random_interleave") {
   list(
     prop.points = generateRandomDesign(par.set = par.set, n = n),
     crit.vals = matrix(rep.int(NA_real_, n), nrow = n, ncol = 1L),
     propose.time = rep.int(NA_real_, n),
-    prop.type = rep("random_interleave", n),
+    prop.type = rep(prop.type, n),
     errors.model = rep.int(NA_character_, n)
   )
 }

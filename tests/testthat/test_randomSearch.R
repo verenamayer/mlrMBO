@@ -3,10 +3,10 @@ context("randomSearch")
 test_that("basic randomSearch works", {
   ctrl = makeMBOControl()
   ctrl = setMBOControlTermination(ctrl, iters = 20L)
-  or = randomSearch(fun = testf.fsphere.2d, design = testd.fsphere.2d, control = ctrl, show.info = TRUE)
+  or = randomSearch(fun = testf.fsphere.2d, control = ctrl, show.info = FALSE)
   expect_true(!is.na(or$y))
   expect_equal(or$y, testf.fsphere.2d(or$x))
-  expect_equal(getOptPathLength(or$opt.path), 30)
+  expect_equal(getOptPathLength(or$opt.path), 20)
   expect_true(is.list(or$x))
   expect_equal(names(or$x), names(testp.fsphere.2d$pars))
   
@@ -22,10 +22,14 @@ test_that("basic randomSearch works", {
     ),
     has.simple.signature = FALSE
   )
-  ctrl2 = setMBOControlTermination(ctrl, iters = 20, exec.time.budget = 100)
-  des = generateTestDesign(5L, smoof::getParamSet(objfun))
-  or = randomSearch(fun = objfun, design = des, control = ctrl2, show.info = TRUE)
+  ctrl2 = setMBOControlTermination(ctrl, exec.time.budget = 100)
+  or = randomSearch(fun = objfun, control = ctrl2, show.info = FALSE)
   expect_equal(sum(as.data.frame(or$opt.path)$exec.time), 150)
-  expect_equal(getOptPathLength(or$opt.path), 15)
+  expect_equal(getOptPathLength(or$opt.path), 10)
+
+  #now with parallel execution
+  ctrl3 = makeMBOControl(schedule.nodes = 2)
+  ctrl3 = setMBOControlTermination(ctrl3, time.budget = 5)
+  or = randomSearch(fun = objfun, control = ctrl3, show.info = FALSE)
 })
 
