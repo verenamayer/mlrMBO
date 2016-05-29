@@ -8,17 +8,44 @@
 # See infillOptCMAES.R for interface explanation.
 infillOptFocus = function(infill.crit, models, control, par.set, opt.path, design, iter, ...) {
   global.y = Inf
-
+  
   # restart the whole crap some times
   for (restart.iter in seq_len(control$infill.opt.restarts)) {
     # copy parset so we can shrink it
     ps.local = par.set
+    if (control$infill.eps.proposed.points.rf == TRUE) {
+      eps = control$infill.eps
+    }
 
     # do iterations where we focus the region-of-interest around the current best point
     for (local.iter in seq_len(control$infill.opt.focussearch.maxit)) {
       # predict on design where NAs were imputed, but return proposed points with NAs
       newdesign = generateDesign(control$infill.opt.focussearch.points, ps.local, randomLHS)
-
+      
+      # if you want epsilon distance for proposed points, delete points in the newdesign with distance 
+      # smaller than epsilon; if all points in the newdesign smaller take the point with max distance.
+      if (control$infill.eps.proposed.points.rf == TRUE) {
+        # compute distance between designpoints and save points with dist < epsilon
+        dist_designs = gower.dist(data.x = newdesign, data.y = design[,-dim(design)[2], drop = FALSE])
+        newpoints_dist_smaller_eps = unique(which(dist_designs < eps, arr.ind = TRUE)[, 1])
+        
+        # if distance < epsilon, delete point in the newdesign
+        if (length(newpoints_dist_smaller_eps) != 0 &&
+            length(newpoints_dist_smaller_eps) != dim(newdesign)[1]) {
+          newdesign = newdesign[-newpoints_dist_smaller_eps, , drop = FALSE]
+        }
+        
+        # if all points < epsilon, take the point with max distance
+        if (length(newpoints_dist_smaller_eps) == dim(newdesign)[1]) {
+          newpoints_dist_max = which(dist_designs == max(dist_designs), arr.ind = TRUE)[, 1]
+          # sample one point; but maybe its better to take the point with the best infill.crit value 
+          #if (length(row_dist_max) > 1) {
+          #  row_dist_max = sample(row_dist_max, 1)
+          #}
+          newdesign = newdesign[newpoints_dist_max, , drop = FALSE]
+        }
+      }
+      
       # convert to param encoding our model was trained on and can use
       newdesign = convertDataFrameCols(newdesign, ints.as.num = TRUE, logicals.as.factor = TRUE)
       y = infill.crit(newdesign, models, control, ps.local, design, iter, ...)

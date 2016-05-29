@@ -19,6 +19,23 @@ mboTemplate.OptProblem = function(obj) {
   # evaluate initial design (if y not given) and log to optpath
   evalMBODesign.OptState(opt.state)
   finalizeMboLoop(opt.state)
+  
+  # if you want epsilon distance for proposed points, set epsilon start value
+  if (opt.state$opt.problem$control$infill.eps.proposed.points.rf == TRUE) {
+    control = opt.state$opt.problem$control
+    eps_start = control$infill.eps.start.proposed.points.rf
+    # For now, set default epsilon start here; for example: mean distance designpoints / 2
+    if (eps_start == "mean.dist") {
+      design = opt.state$opt.problem$design
+      dist_designpoints = gower.dist(data.x = design) 
+      eps_start = mean(dist_designpoints)/2
+    }
+    if (is.numeric(eps_start) != TRUE) {
+      stop("eps_start must be numeric!")
+    }
+    opt.state$opt.problem$control$infill.eps.start.proposed.points.rf = eps_start
+  }
+  
   mboTemplate(opt.state)
 }
 
@@ -34,6 +51,30 @@ mboTemplate.OptState = function(obj) {
       was satisfied right after the creation of the initial design!", terminate$message)
     return(opt.state)
   }
+  
+  # if you want epsilon distance for proposed points, set function for epsilon ("line" is default)
+  if (opt.state$opt.problem$control$infill.eps.proposed.points.rf == TRUE) {
+    control = opt.state$opt.problem$control
+    eps_start = control$infill.eps.start.proposed.points.rf
+    if (control$infill.eps.fkt.proposed.points.rf == "line") {
+      eps_fkt = function(x) {
+        -eps_start / (control$iters) * x + eps_start
+      }
+    } else if (control$infill.eps.fkt.proposed.points.rf == "parable") {
+      eps_fkt = function(x) {
+        eps_start / (control$iters) ^ 2 * x ^ 2 - 2 * eps_start / (control$iters) * x + eps_start
+      }
+    } else if (control$infill.eps.fkt.proposed.points.rf == "neg.parable") {
+      eps_fkt = function(x) {
+        -eps_start / (control$iters) ^ 2 * x ^ 2 + eps_start
+      }
+    } else {
+      stop("You can only set line, parable or neg.parable for eps.fkt.proposed.points.rf")
+    }
+    # save epsilon for the iterations, because we do not want to change the epsilon start value 
+    opt.state$opt.problem$control$infill.eps = eps_start
+  }
+  
   repeat {
     prop = proposePoints.OptState(opt.state)
     evalProposedPoints.OptState(opt.state, prop)
@@ -41,6 +82,10 @@ mboTemplate.OptState = function(obj) {
     terminate = getOptStateTermination(opt.state)
     if (terminate$term) {
       break
+    }
+    # if you want epsilon distance for proposed points, lower the epsilon in each iteration
+    if (opt.state$opt.problem$control$infill.eps.proposed.points.rf == TRUE) {
+      opt.state$opt.problem$control$infill.eps = eps_fkt(opt.state$loop)
     }
   }
   opt.state

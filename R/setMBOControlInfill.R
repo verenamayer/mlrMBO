@@ -145,6 +145,11 @@ setMBOControlInfill = function(control,
   crit.aei.use.nugget = NULL,
   filter.proposed.points = NULL,
   filter.proposed.points.tol = NULL,
+  
+  eps.proposed.points.rf = FALSE,
+  eps.start.proposed.points.rf = NULL,
+  eps.fkt.proposed.points.rf = NULL,
+  
   opt = "focussearch", opt.restarts = NULL,
   opt.focussearch.maxit = NULL, opt.focussearch.points = NULL,
   opt.cmaes.control = NULL,
@@ -193,6 +198,12 @@ setMBOControlInfill = function(control,
   control$filter.proposed.points.tol = coalesce(filter.proposed.points.tol, control$filter.proposed.points.tol, 1e-4)
   assertNumber(control$filter.proposed.points.tol, na.ok = FALSE, lower = 0)
 
+  control$infill.eps.proposed.points.rf = eps.proposed.points.rf
+  
+  control$infill.eps.start.proposed.points.rf = coalesce(eps.start.proposed.points.rf, "mean.dist")
+  
+  control$infill.eps.fkt.proposed.points.rf = coalesce(eps.fkt.proposed.points.rf, "line")
+  
   control$infill.opt = coalesce(opt, control$infill.opt, "focussearch")
   assertChoice(control$infill.opt, choices = getSupportedInfillOptFunctions())
 
