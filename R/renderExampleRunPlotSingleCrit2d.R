@@ -37,7 +37,6 @@ renderExampleRunPlot2d = function(x, iter,
     opt.direction = -1
   }
   opt.path = as.data.frame(mbo.res$opt.path)
-
   idx.init = which(opt.path$dob == 0)
 
   # FIXME: what to plot if not infillcrit that uses se?
@@ -102,6 +101,7 @@ renderExampleRunPlot2d = function(x, iter,
     pl = ggplot(data = data, aes_string(x = name.x1, y = name.x2, z = name.z))
     pl = pl + geom_tile(aes_string(fill = name.z))
     pl = pl + scale_fill_gradientn(colours = brewer.palette(200))
+    pl = pl + coord_cartesian(xlim = c(min(data$x1), max(data$x1)), ylim = c(min(data$x2), max(data$x2)))
 
     # sometimes contour lines cannot be plotted for EI
     if (name.z != "ei") {
@@ -111,7 +111,25 @@ renderExampleRunPlot2d = function(x, iter,
     # Keep in mind, that for the points the z value is always "name.y"
     pl = pl + geom_point(data = points, aes_string(x = name.x1, y = name.x2, z = name.y,
         colour = "type", shape = "type"), size = point.size)
-
+    
+    
+    # if epsilon distance for proposed points, set circles in the plot
+    if (control$infill.eps.proposed.points.rf) {
+      eps = control$infill.eps
+      for (i in 1:(dim(points)[1] - 1)) {
+        df_circle = data.frame(
+          x = points$x1[i] + mbo.res$opt.path$env$eps[iter] * sin(seq(-pi, pi, length = 50)),
+          y = points$x2[i] + mbo.res$opt.path$env$eps[iter] * cos(seq(-pi, pi, length = 50))
+        )
+        pl = pl + geom_polygon(
+          data = df_circle,
+          aes(x = x, y = y),
+          inherit.aes = F,
+          alpha = 0.4
+        )
+      }
+    }
+    
     pl = pl + scale_colour_manual(name = "type", values = colors)# c("#000000", "red", "gray"))
     pl = applyMBOTheme(pl, title = name.z, trafo = trafo)
     return(pl)

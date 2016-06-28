@@ -149,6 +149,7 @@ setMBOControlInfill = function(control,
   eps.proposed.points.rf = FALSE,
   eps.start.proposed.points.rf = NULL,
   eps.fkt.proposed.points.rf = NULL,
+  eps.dist.proposed.points = NULL,
   
   opt = "focussearch", opt.restarts = NULL,
   opt.focussearch.maxit = NULL, opt.focussearch.points = NULL,
@@ -203,6 +204,8 @@ setMBOControlInfill = function(control,
   control$infill.eps.start.proposed.points.rf = coalesce(eps.start.proposed.points.rf, "mean.dist")
   
   control$infill.eps.fkt.proposed.points.rf = coalesce(eps.fkt.proposed.points.rf, "line")
+  
+  control$infill.eps.dist.proposed.points = coalesce(eps.dist.proposed.points, "gower")
   
   control$infill.opt = coalesce(opt, control$infill.opt, "focussearch")
   assertChoice(control$infill.opt, choices = getSupportedInfillOptFunctions())

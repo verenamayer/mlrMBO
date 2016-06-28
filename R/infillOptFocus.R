@@ -13,9 +13,10 @@ infillOptFocus = function(infill.crit, models, control, par.set, opt.path, desig
   for (restart.iter in seq_len(control$infill.opt.restarts)) {
     # copy parset so we can shrink it
     ps.local = par.set
-    if (control$infill.eps.proposed.points.rf == TRUE) {
-      eps = control$infill.eps
-    }
+    
+    # if (control$infill.eps.proposed.points.rf) {
+    #   eps = control$infill.eps
+    # }
 
     # do iterations where we focus the region-of-interest around the current best point
     for (local.iter in seq_len(control$infill.opt.focussearch.maxit)) {
@@ -23,26 +24,38 @@ infillOptFocus = function(infill.crit, models, control, par.set, opt.path, desig
       newdesign = generateDesign(control$infill.opt.focussearch.points, ps.local, randomLHS)
       
       # if you want epsilon distance for proposed points, delete points in the newdesign with distance 
-      # smaller than epsilon; if all points in the newdesign smaller take the point with max distance.
-      if (control$infill.eps.proposed.points.rf == TRUE) {
+      # smaller than epsilon; if all points in the newdesign smaller take a random point.
+      if (control$infill.eps.proposed.points.rf) {
         # compute distance between designpoints and save points with dist < epsilon
-        dist_designs = gower.dist(data.x = newdesign, data.y = design[,-dim(design)[2], drop = FALSE])
-        newpoints_dist_smaller_eps = unique(which(dist_designs < eps, arr.ind = TRUE)[, 1])
+        if (control$infill.eps.dist.proposed.points == "gower") {
+          dist_designs = gower.dist(data.x = newdesign, data.y = design[,-dim(design)[2], drop = FALSE])
+        } else if (control$infill.eps.dist.proposed.points == "euclidean") {
+          y = design[,-dim(design)[2], drop = FALSE]
+          y = as.matrix(y)
+          x = as.matrix(newdesign)
+          dist_designs = rdist(x, y)
+        }
         
+        newpoints_dist_smaller_eps = unique(which(dist_designs < control$infill.eps, arr.ind = TRUE)[, 1])
         # if distance < epsilon, delete point in the newdesign
         if (length(newpoints_dist_smaller_eps) != 0 &&
             length(newpoints_dist_smaller_eps) != dim(newdesign)[1]) {
           newdesign = newdesign[-newpoints_dist_smaller_eps, , drop = FALSE]
-        }
         
         # if all points < epsilon, take the point with max distance
-        if (length(newpoints_dist_smaller_eps) == dim(newdesign)[1]) {
-          newpoints_dist_max = which(dist_designs == max(dist_designs), arr.ind = TRUE)[, 1]
-          # sample one point; but maybe its better to take the point with the best infill.crit value 
-          #if (length(row_dist_max) > 1) {
-          #  row_dist_max = sample(row_dist_max, 1)
+        # } else if (length(newpoints_dist_smaller_eps) == dim(newdesign)[1]) {
+        #   newpoints_dist_max = which(dist_designs == max(dist_designs), arr.ind = TRUE)[, 1]
+          # sample one max point; but maybe its better to take the point with the best infill.crit value 
+          #if (length(newpoints_dist_max) > 1) {
+          #  newpoints_dist_max = sample(newpoints_dist_max, 1)
           #}
-          newdesign = newdesign[newpoints_dist_max, , drop = FALSE]
+        # newdesign = newdesign[newpoints_dist_max, , drop = FALSE]
+        # }
+        
+        # if all points < epsilon, take a random point
+        } else if (length(newpoints_dist_smaller_eps) == dim(newdesign)[1]) {
+          random.point = sample(newpoints_dist_smaller_eps, 1)
+          newdesign = newdesign[random.point, , drop = FALSE]
         }
       }
       
