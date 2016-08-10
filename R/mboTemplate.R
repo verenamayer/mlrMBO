@@ -24,6 +24,9 @@ mboTemplate.OptProblem = function(obj) {
   if (opt.state$opt.problem$control$infill.eps.proposed.points.rf) {
     if (opt.state$opt.problem$control$infill.eps.dist.proposed.points == "gower") {
       dist_designpoints = gower.dist(data.x = opt.state$opt.problem$design)
+      # without diag points (distance of the point itself)
+      diag(dist_designpoints) = NA
+      dist_designpoints = dist_designpoints[(which(!is.na(dist_designpoints)))]
     } else if (opt.state$opt.problem$control$infill.eps.dist.proposed.points == "euclidean") {
       dist_designpoints = dist(opt.state$opt.problem$design, method = "euclidean")
     } else {

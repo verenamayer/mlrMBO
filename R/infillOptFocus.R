@@ -23,14 +23,28 @@ infillOptFocus = function(infill.crit, models, control, par.set, opt.path, desig
       # predict on design where NAs were imputed, but return proposed points with NAs
       newdesign = generateDesign(control$infill.opt.focussearch.points, ps.local, randomLHS)
       
+      
       # if you want epsilon distance for proposed points, delete points in the newdesign with distance 
       # smaller than epsilon; if all points in the newdesign smaller take a random point.
       if (control$infill.eps.proposed.points.rf) {
-        # compute distance between designpoints and save points with dist < epsilon
+        # for gower dist, the factor levels of design and newdesign have to be equal
+        for (i in 1:length(newdesign)) {
+          if (is.factor(newdesign[, i])) {
+            colname = colnames(newdesign)[i]
+            if (!length(levels(design[ , colname])) == length(levels(newdesign[ , colname]))) {
+              levels(newdesign[ , colname]) = c(levels(newdesign[ , colname]), 
+                                                levels(design[ , colname])[which(!(levels(design[ , colname]) %in% 
+                                                                                     levels(newdesign[ , colname])))])
+              newdesign[ , colname] = factor(newdesign[, colname], levels = levels(design[ , colname]))
+            }
+          }
+        }
+        
+        # compute distance between designpoints
         if (control$infill.eps.dist.proposed.points == "gower") {
-          dist_designs = gower.dist(data.x = newdesign, data.y = design[,-dim(design)[2], drop = FALSE])
+          dist_designs = gower.dist(data.x = newdesign, data.y = design[ , which(colnames(design) != "y"), drop = FALSE])
         } else if (control$infill.eps.dist.proposed.points == "euclidean") {
-          y = design[,-dim(design)[2], drop = FALSE]
+          y = design[ , which(colnames(design) != "y"), drop = FALSE]
           y = as.matrix(y)
           x = as.matrix(newdesign)
           dist_designs = rdist(x, y)
@@ -96,7 +110,7 @@ infillOptFocus = function(infill.crit, models, control, par.set, opt.path, desig
                # remove current val from delete options, should work also for NA
                val.names = setdiff(val.names, val)
                to.del = sample(seq_along(val.names), 1)
-               par$values = par$values[-to.del]
+               par$values = par$values[-to.del, drop = FALSE]
              }
            }
          }
