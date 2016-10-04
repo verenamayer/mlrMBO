@@ -23,12 +23,9 @@ mboTemplate.OptProblem = function(obj) {
   # if you want epsilon distance for proposed points, set epsilon start value
   if (opt.state$opt.problem$control$infill.eps.proposed.points.rf) {
     if (opt.state$opt.problem$control$infill.eps.dist.proposed.points == "gower") {
-      dist_designpoints = gower.dist(data.x = opt.state$opt.problem$design)
-      # without diag points (distance of the point itself)
-      diag(dist_designpoints) = NA
-      dist_designpoints = dist_designpoints[(which(!is.na(dist_designpoints)))]
+      dist_designpoints = proxy::dist(opt.state$opt.problem$design, method = "gower")
     } else if (opt.state$opt.problem$control$infill.eps.dist.proposed.points == "euclidean") {
-      dist_designpoints = dist(opt.state$opt.problem$design, method = "euclidean")
+      dist_designpoints = proxy::dist(opt.state$opt.problem$design, method = "euclidean")
     } else {
       stop("You can only set gower or euclidean for eps.dist.proposed.points!")
     }
